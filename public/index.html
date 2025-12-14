@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credential Aggregator</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        .step { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; }
+        .hidden { display: none; }
+        button { padding: 0.5rem 1rem; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:disabled { background: #ccc; }
+        input { padding: 0.5rem; width: 70%; }
+        .card { border: 1px solid #eee; padding: 10px; margin: 5px 0; background: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <h1>Credential Aggregator</h1>
+    
+    <!-- Step 1: Input -->
+    <div id="step1" class="step">
+        <h3>1. Add Certificate</h3>
+        <p>Paste a public credential URL to automatically fetch all credentials.</p>
+        <input type="text" id="certUrl" placeholder="https://www.credential.net/..." />
+        <button onclick="fullImport()">Get All Credentials</button>
+        <p id="statusMsg"></p>
+    </div>
+
+    <!-- Step 2: Results (Combined) -->
+    <div id="step2" class="step hidden">
+        <h3>Results</h3>
+        <p>Wallet: <strong id="walletUrlDisplay"></strong></p>
+        <div id="resultsList"></div>
+        <br>
+        <button onclick="location.reload()">Start Over</button>
+    </div>
+
+    <script>
+        const USER_ID = "test_user_123"; 
+
+        async function fullImport() {
+            const certUrl = document.getElementById('certUrl').value;
+            const status = document.getElementById('statusMsg');
+            status.innerText = "Processing... (Discovering wallet & scraping credentials)";
+            
+            try {
+                const res = await fetch('/api/full-import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ certUrl, userId: USER_ID })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('step1').classList.add('hidden');
+                    document.getElementById('step2').classList.remove('hidden');
+                    document.getElementById('walletUrlDisplay').innerText = data.walletUrl;
+                    renderCredentials(data.credentials);
+                } else {
+                    status.innerText = "Error: " + data.error;
+                }
+            } catch (e) {
+                status.innerText = "Network Error";
+            }
+        }
+
+        function renderCredentials(list) {
+            const container = document.getElementById('resultsList');
+            container.innerHTML = list.map(c => `
+                <div class="card">
+                    <strong>UUID:</strong> ${c.credential_uuid}<br>
+                    <strong>Issuer:</strong> ${c.issuer_domain}<br>
+                    <a href="${c.credential_url}" target="_blank">View Credential</a>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
