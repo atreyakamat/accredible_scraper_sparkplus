@@ -4,7 +4,8 @@
   "description": "User-authorized aggregation of publicly available credentials",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "npx playwright install chromium"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
